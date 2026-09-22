@@ -11,7 +11,7 @@ Play it live — no account, no sign-in:
 - Move: A / D or arrows
 - Jump: W, Space, or Up (hold to go higher). Press jump again in the air for a double jump.
 - Stomp nacho chips. Stomp tacos into shells, then kick the shells.
-- Hot sauce lets you throw salsa with J or Shift
+- Hot sauce: bump the crate, then shoot salsa with J, K, or Shift (Salsa pad on a phone). You put on a cowboy hat and serape.
 - Down on a burrito tube warps ahead
 - Reach the chili flag to clear the course
 - On a phone, use the pads along the bottom

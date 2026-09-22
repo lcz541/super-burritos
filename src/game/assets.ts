@@ -10,6 +10,9 @@ export type Art = {
   heroIdle: Sheet;
   heroRun: Sheet;
   heroJump: Sheet;
+  heroIdleGun: Sheet;
+  heroRunGun: Sheet;
+  heroJumpGun: Sheet;
   nacho: Sheet;
   taco: Sheet;
   coin: Sheet;
@@ -53,6 +56,9 @@ export async function loadArt(): Promise<Art> {
     heroIdle,
     heroRun,
     heroJump,
+    heroIdleGun,
+    heroRunGun,
+    heroJumpGun,
     nacho,
     taco,
     coin,
@@ -79,6 +85,9 @@ export async function loadArt(): Promise<Art> {
     loadImg("/sprites/hero-idle.png"),
     loadImg("/sprites/hero-run.png"),
     loadImg("/sprites/hero-jump.png"),
+    loadImg("/sprites/hero-idle-gun.png"),
+    loadImg("/sprites/hero-run-gun.png"),
+    loadImg("/sprites/hero-jump-gun.png"),
     loadImg("/sprites/nacho.png"),
     loadImg("/sprites/taco.png"),
     loadImg("/sprites/coin.png"),
@@ -106,6 +115,9 @@ export async function loadArt(): Promise<Art> {
     heroIdle: sheet(heroIdle, 2, 2),
     heroRun: sheet(heroRun, 2, 2),
     heroJump: sheet(heroJump, 2, 2),
+    heroIdleGun: sheet(heroIdleGun, 2, 2),
+    heroRunGun: sheet(heroRunGun, 2, 2),
+    heroJumpGun: sheet(heroJumpGun, 2, 2),
     nacho: sheet(nacho, 2, 2),
     taco: sheet(taco, 2, 2),
     coin: sheet(coin, 2, 2),

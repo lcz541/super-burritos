@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Pause, Play, Volume2, VolumeX, RotateCcw, BookOpen, Share2 } from "lucide-react";
+import { Pause, Play, Volume2, VolumeX, RotateCcw, BookOpen, Share2, Flame } from "lucide-react";
 import { createGame } from "@/game/engine";
 import { useGame } from "@/game/store";
 import { unlockAudio, setMuted } from "@/game/audio";
@@ -79,6 +79,14 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
         </header>
       )}
 
+      {playing && hud.powered && (
+        <div className="pointer-events-none absolute left-3 top-[4.75rem] z-10 flex items-center gap-2 rounded-sm bg-primary px-2 py-1 text-primary-fg sm:left-6 sm:top-16">
+          <Flame className="size-3.5" />
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em]">Gunslinger</p>
+          <p className="text-[10px] font-semibold tracking-wide opacity-90">J / K / Shift</p>
+        </div>
+      )}
+
       {playing && (
         <div className="pointer-events-auto absolute right-3 top-16 z-20 flex gap-2 sm:top-4">
           <IconBtn label={hud.muted ? "Unmute" : "Mute"} onClick={toggleMute}>
@@ -102,7 +110,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
                   Super Burritos
                 </h1>
                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-                  Stomp nacho chips, kick taco troopers, and dive through burrito tubes. Grab hot sauce to spit salsa.
+                  Stomp nacho chips, kick taco troopers, and dive through burrito tubes. Hot sauce turns you into a salsa gunslinger — shoot with J, K, or Shift.
                 </p>
                 {rival != null && (
                   <div className="mt-4 rounded-md border border-border bg-surface-2 px-3 py-3">
@@ -283,7 +291,11 @@ function HowTo({ onBack }: { onBack: () => void }) {
       <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted">
         <li>A / D or arrows move. W, Space, or Up jumps. Tap jump again in the air for a double jump. Hold jump to go higher.</li>
         <li>Stomp nacho chips. Stomp tacos into shells, then bump or stomp the shell to send it sliding.</li>
-        <li>Bump mystery crates from below. Hot sauce lets you throw salsa with J or Shift.</li>
+        <li>
+          Bump mystery crates from below. Hot sauce turns you into a salsa gunslinger. Shoot with{" "}
+          <span className="font-semibold text-fg">J</span>, <span className="font-semibold text-fg">K</span>, or{" "}
+          <span className="font-semibold text-fg">Shift</span>. On a phone, tap Salsa.
+        </li>
         <li>S / Down on a burrito tube warps ahead. Reach the chili flag to clear the course.</li>
         <li>Gamepad works too. On a phone, use the pads along the bottom.</li>
       </ul>

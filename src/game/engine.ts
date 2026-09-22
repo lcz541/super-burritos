@@ -1047,16 +1047,17 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     const ph = 52 * player.squash;
     const p = worldToScreen(player.x + PW / 2 - pw / 2, player.y + PH - ph);
     const flip = player.facing < 0;
-    let sheet = art.heroIdle;
+    const gun = player.powered;
+    let sheet = gun ? art.heroIdleGun : art.heroIdle;
     let frame = Math.floor(player.anim * 6);
     if (player.dead || player.clearing) {
-      sheet = art.heroJump;
+      sheet = gun ? art.heroJumpGun : art.heroJump;
       frame = 3;
     } else if (!player.grounded) {
-      sheet = art.heroJump;
+      sheet = gun ? art.heroJumpGun : art.heroJump;
       frame = player.vy < -80 ? 1 : player.vy < 80 ? 2 : 3;
     } else if (Math.abs(player.vx) > 25) {
-      sheet = art.heroRun;
+      sheet = gun ? art.heroRunGun : art.heroRun;
       frame = Math.floor(player.anim * 10);
     }
     drawSheet(ctx, sheet, frame, p.x, p.y, pw, ph, flip);
@@ -1131,6 +1132,10 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     getInjected: () => input.getInjected(),
     isDead: () => player.dead,
     isGrounded: () => player.grounded,
+    setPowered: (v: boolean) => {
+      player.powered = v;
+      sync({ powered: v });
+    },
   };
 
   raf = requestAnimationFrame(frame);
@@ -1183,6 +1188,7 @@ declare global {
       getInjected?: () => string[];
       isDead?: () => boolean;
       isGrounded?: () => boolean;
+      setPowered?: (v: boolean) => void;
     };
     __game?: { start: () => void; pause: () => void };
   }
