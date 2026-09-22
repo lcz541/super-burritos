@@ -773,7 +773,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
           if (e.kind === "taco" && e.state === "walk") {
             toShell(e);
             addScore(100, e.x, e.y);
-            burst(e.x + 8, e.y + 8, "#c23b22", 6);
+            burst(e.x + 8, e.y + 8, "#f15a24", 6);
             play("stomp");
           } else if (e.kind === "taco" && (e.state === "shell" || e.state === "slide")) {
             kickShell(e, a.vx >= 0 ? -1 : 1);
@@ -783,7 +783,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
             e.state = "squash";
             e.t = 0;
             addScore(200, e.x, e.y);
-            burst(e.x + 8, e.y + 8, "#c23b22", 8);
+            burst(e.x + 8, e.y + 8, "#f15a24", 8);
             play("stomp");
           }
         }
@@ -826,7 +826,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
         player.powered = true;
         play("power");
         addScore(1000, a.x, a.y);
-        burst(a.x, a.y, "#c23b22", 10);
+        burst(a.x, a.y, "#f15a24", 10);
         sync({ powered: true });
       }
       if (a.kind === "flag" && aabb(px, py, PW, PH, a.x, a.y, a.w, a.h)) {
@@ -1092,7 +1092,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     resize();
     ctx.clearRect(0, 0, VIEW_W, VIEW_H);
     if (!art) {
-      ctx.fillStyle = "#1a120e";
+      ctx.fillStyle = "#1c0b06";
       ctx.fillRect(0, 0, VIEW_W, VIEW_H);
       return;
     }

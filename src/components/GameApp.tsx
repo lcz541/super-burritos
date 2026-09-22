@@ -66,7 +66,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full"
-        style={{ objectFit: "contain", background: "#1a120e" }}
+        style={{ objectFit: "contain", background: "#1c0b06" }}
         aria-label="Super Burritos game"
       />
 
@@ -100,27 +100,25 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
 
       {showMenu && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg/55 px-4 pb-24 pt-8">
-          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-[0_24px_60px_rgba(0,0,0,0.45)] sm:p-8">
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.45)] sm:p-8">
             {hud.phase === "howto" ? (
               <HowTo onBack={() => useGame.getState().patch({ phase: "title" })} />
             ) : (
               <>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">World 1</p>
-                <h1 className="mt-2 font-display text-4xl leading-none tracking-wide text-fg sm:text-5xl">
-                  Super Burritos
-                </h1>
+                <p className="wordmark-super text-sm">Super</p>
+                <h1 className="wordmark-burrito mt-1 text-5xl sm:text-6xl">Burritos</h1>
                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
                   Stomp nacho chips, kick taco troopers, and dive through burrito tubes. Hot sauce turns you into a salsa gunslinger — shoot with J, K, or Shift.
                 </p>
                 {rival != null && (
                   <div className="mt-4 rounded-md border border-border bg-surface-2 px-3 py-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">A friend sent this</p>
-                    <p className="mt-1 font-display text-2xl leading-none tabular-nums text-fg">{padScore(rival)}</p>
+                    <p className="mt-1 font-display text-2xl leading-none tabular-nums text-ink">{padScore(rival)}</p>
                     <p className="mt-1 text-sm text-muted">Beat their run, then send yours back.</p>
                   </div>
                 )}
                 {hud.highScore > 0 && (
-                  <p className="mt-3 text-sm tabular-nums text-fg">Best {String(hud.highScore).padStart(6, "0")}</p>
+                  <p className="mt-3 text-sm tabular-nums text-ink">Best {String(hud.highScore).padStart(6, "0")}</p>
                 )}
                 <div className="mt-6 flex flex-col gap-2">
                   <button
@@ -135,7 +133,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
                   <button
                     type="button"
                     onClick={() => useGame.getState().patch({ phase: "howto" })}
-                    className="flex h-12 items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-5 font-semibold text-fg transition-transform duration-[var(--motion-quick)] active:scale-[0.98]"
+                    className="flex h-12 items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-5 font-semibold text-ink transition-transform duration-[var(--motion-quick)] active:scale-[0.98]"
                   >
                     <BookOpen className="size-4" />
                     How to play
@@ -143,7 +141,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
                   <button
                     type="button"
                     onClick={() => openShare(false)}
-                    className="flex h-12 items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-5 font-semibold text-fg transition-transform duration-[var(--motion-quick)] active:scale-[0.98]"
+                    className="flex h-12 items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-5 font-semibold text-ink transition-transform duration-[var(--motion-quick)] active:scale-[0.98]"
                   >
                     <Share2 className="size-4" />
                     {hud.highScore > 0 ? "Challenge a friend" : "Share"}
@@ -189,7 +187,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
         >
           <p className="mb-1 text-sm tabular-nums text-muted">Score {String(hud.score).padStart(6, "0")}</p>
           {rival != null && (
-            <p className="mb-3 text-sm tabular-nums text-fg">
+            <p className="mb-3 text-sm tabular-nums text-ink">
               {beatRival ? "Beat" : missedRival ? "Short of" : "Tied"} {padScore(rival)}
             </p>
           )}
@@ -208,7 +206,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
             <button
               type="button"
               onClick={() => openShare(true)}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-5 font-semibold text-fg"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-5 font-semibold text-ink"
             >
               <Share2 className="size-4" />
               Challenge a friend
@@ -236,8 +234,8 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
 
 function HudChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-sm bg-ink/55 px-2 py-1 backdrop-blur-[2px]">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">{label}</p>
+    <div className="min-w-0 rounded-sm bg-ink/70 px-2 py-1 backdrop-blur-[2px]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fg/70">{label}</p>
       <p className="font-display text-lg leading-none tabular-nums text-fg">{value}</p>
     </div>
   );
@@ -249,7 +247,7 @@ function IconBtn({ label, onClick, children }: { label: string; onClick: () => v
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="pointer-events-auto flex size-11 items-center justify-center rounded-md border border-border bg-surface/90 text-fg"
+      className="pointer-events-auto flex size-11 items-center justify-center rounded-md border border-border bg-surface/90 text-ink"
     >
       {children}
     </button>
@@ -263,7 +261,7 @@ function Pad({ act, label, wide }: { act: string; label: string; wide?: boolean 
       data-act={act}
       aria-label={label}
       className={
-        "flex h-14 items-center justify-center rounded-md border border-border bg-surface/85 font-semibold text-fg " +
+        "flex h-14 items-center justify-center rounded-md border border-border bg-surface/90 font-semibold text-ink " +
         (wide ? "min-w-20 px-4" : "w-14")
       }
     >
@@ -275,8 +273,8 @@ function Pad({ act, label, wide }: { act: string; label: string; wide?: boolean 
 function Modal({ title, body, children }: { title: string; body: string; children: ReactNode }) {
   return (
     <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg/60 px-4 pb-24">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-6">
-        <h2 className="font-display text-3xl text-fg">{title}</h2>
+      <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-6 text-ink">
+        <h2 className="font-display text-3xl text-ink">{title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
         <div className="mt-5">{children}</div>
       </div>
@@ -287,14 +285,14 @@ function Modal({ title, body, children }: { title: string; body: string; childre
 function HowTo({ onBack }: { onBack: () => void }) {
   return (
     <div>
-      <h2 className="font-display text-3xl text-fg">How to play</h2>
+      <h2 className="font-display text-3xl text-ink">How to play</h2>
       <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted">
         <li>A / D or arrows move. W, Space, or Up jumps. Tap jump again in the air for a double jump. Hold jump to go higher.</li>
         <li>Stomp nacho chips. Stomp tacos into shells, then bump or stomp the shell to send it sliding.</li>
         <li>
           Bump mystery crates from below. Hot sauce turns you into a salsa gunslinger. Shoot with{" "}
-          <span className="font-semibold text-fg">J</span>, <span className="font-semibold text-fg">K</span>, or{" "}
-          <span className="font-semibold text-fg">Shift</span>. On a phone, tap Salsa.
+          <span className="font-semibold text-ink">J</span>, <span className="font-semibold text-ink">K</span>, or{" "}
+          <span className="font-semibold text-ink">Shift</span>. On a phone, tap Salsa.
         </li>
         <li>S / Down on a burrito tube warps ahead. Reach the chili flag to clear the course.</li>
         <li>Gamepad works too. On a phone, use the pads along the bottom.</li>

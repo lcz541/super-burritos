@@ -62,12 +62,12 @@ export function ShareSheet({ payload, onClose }: Props) {
       <div
         role="dialog"
         aria-labelledby="share-title"
-        className="max-h-[min(40rem,calc(100dvh-5rem))] w-full max-w-md overflow-y-auto rounded-xl border border-border bg-surface p-6 shadow-[0_24px_60px_rgba(0,0,0,0.45)] sm:p-8"
+        className="max-h-[min(40rem,calc(100dvh-5rem))] w-full max-w-md overflow-y-auto rounded-xl border border-border bg-surface p-6 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.45)] sm:p-8"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Send a challenge</p>
-            <h2 id="share-title" className="mt-1 font-display text-3xl leading-none text-fg">
+            <h2 id="share-title" className="mt-1 font-display text-3xl leading-none text-ink">
               Share Super Burritos
             </h2>
           </div>
@@ -75,7 +75,7 @@ export function ShareSheet({ payload, onClose }: Props) {
             type="button"
             aria-label="Close share"
             onClick={onClose}
-            className="flex size-11 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2 text-fg"
+            className="flex size-11 shrink-0 items-center justify-center rounded-md border border-border bg-surface-2 text-ink"
           >
             <X className="size-5" />
           </button>
@@ -111,7 +111,7 @@ export function ShareSheet({ payload, onClose }: Props) {
             value={url}
             aria-label="Challenge link"
             onFocus={(e) => e.currentTarget.select()}
-            className="mt-1 h-11 w-full select-text truncate rounded-md border border-border bg-surface-2 px-3 text-sm text-fg"
+            className="mt-1 h-11 w-full select-text truncate rounded-md border border-border bg-surface-2 px-3 text-sm text-ink"
           />
         </label>
 
@@ -152,7 +152,7 @@ function SheetBtn({
       onClick={onClick}
       className={
         "flex h-12 items-center justify-center gap-2 rounded-md px-5 font-semibold transition-transform duration-[var(--motion-fast)] ease-[var(--ease-out)] active:scale-[0.98] " +
-        (primary ? "bg-primary text-primary-fg hover:brightness-110" : "border border-border bg-surface-2 text-fg")
+        (primary ? "bg-primary text-primary-fg hover:brightness-110" : "border border-border bg-surface-2 text-ink")
       }
     >
       {children}

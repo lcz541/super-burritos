@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #1a120e;
-  --color-surface: #2a1c16;
-  --color-surface-2: #3a281e;
-  --color-fg: #f4e8d0;
-  --color-muted: #c4b49a;
-  --color-primary: #c23b22;
-  --color-primary-fg: #f4e8d0;
-  --color-accent: #5a7a3a;
-  --color-accent-fg: #f4e8d0;
-  --color-ink: #2a1810;
-  --color-border: #4a3228;
-  --color-danger: #c23b22;
+  --color-bg: #1c0b06;
+  --color-surface: #fff6e8;
+  --color-surface-2: #ffe3c2;
+  --color-fg: #fff8f0;
+  --color-muted: #a45228;
+  --color-primary: #f15a24;
+  --color-primary-fg: #fffdf8;
+  --color-accent: #c44112;
+  --color-accent-fg: #fffdf8;
+  --color-ink: #2a1208;
+  --color-border: #e8b07a;
+  --color-danger: #c44112;
 
   --font-display: "Lilita One", "Trebuchet MS", sans-serif;
   --font-sans: "Nunito", "Segoe UI", system-ui, sans-serif;
@@ -58,6 +58,26 @@
     user-select: none;
     -webkit-user-select: none;
   }
+}
+
+.wordmark-super {
+  font-family: var(--font-display);
+  color: var(--color-ink);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.wordmark-burrito {
+  font-family: var(--font-display);
+  color: var(--color-primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 0.9;
+  text-shadow:
+    2px 2px 0 #fffdf8,
+    -1px -1px 0 #2a1208,
+    2px -1px 0 #2a1208,
+    -1px 2px 0 #2a1208;
 }
 
 @media (prefers-reduced-motion: reduce) {

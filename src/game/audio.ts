@@ -43,7 +43,7 @@ function tone(
   };
 }
 
-function noise(dur: number, peak: number, dest: GainNode) {
+function noise(dur: number, peak: number, dest: GainNode, cutoff = 900) {
   const c = ctx();
   if (!c || !bus || muted) return;
   const n = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
@@ -53,14 +53,20 @@ function noise(dur: number, peak: number, dest: GainNode) {
   src.buffer = n;
   const g = c.createGain();
   const f = c.createBiquadFilter();
-  f.type = "lowpass";
-  f.frequency.value = 900;
+  f.type = "highpass";
+  f.frequency.value = cutoff;
   src.connect(f);
   f.connect(g);
   g.connect(dest);
   env(c, g, peak, 0.005, dur);
   src.start();
   src.stop(c.currentTime + dur + 0.02);
+}
+
+function trumpet(freq: number, dur: number, peak: number) {
+  if (!bus) return;
+  tone(freq, dur, "square", peak, bus.music);
+  tone(freq * 1.2599, dur * 0.92, "square", peak * 0.42, bus.music);
 }
 
 export function unlockAudio() {
@@ -71,7 +77,7 @@ export function unlockAudio() {
     const music = c.createGain();
     master.gain.value = 0.7;
     sfx.gain.value = 0.9;
-    music.gain.value = 0.18;
+    music.gain.value = 0.22;
     sfx.connect(master);
     music.connect(master);
     master.connect(c.destination);
@@ -96,15 +102,27 @@ export function stopMusic() {
 export function tickMusic(dt: number) {
   if (!musicOn || muted || !bus) return;
   musicTimer += dt;
-  const beat = 0.22;
+  const beat = 0.14;
   if (musicTimer < beat) return;
   musicTimer -= beat;
-  const bass = [98, 98, 130.8, 87.3, 98, 73.4, 87.3, 98];
-  const lead = [392, 440, 523.25, 440, 392, 349.23, 329.63, 392, 523.25, 440, 392, 349.23, 293.66, 329.63, 349.23, 392];
+
+  const bass = [98, 0, 146.83, 0, 98, 0, 146.83, 0, 130.81, 0, 196, 0, 146.83, 0, 146.83, 0];
+  const lead = [
+    392, 493.88, 587.33, 493.88, 392, 329.63, 392, 0, 440, 493.88, 587.33, 659.25, 587.33, 493.88, 392, 293.66, 493.88,
+    587.33, 659.25, 587.33, 493.88, 392, 440, 493.88, 587.33, 493.88, 392, 329.63, 293.66, 392, 493.88, 392,
+  ];
   const i = step % bass.length;
   const j = step % lead.length;
-  tone(bass[i]!, 0.18, "triangle", 0.12, bus.music);
-  if (step % 2 === 0) tone(lead[j]!, 0.16, "square", 0.05, bus.music);
+  const b = bass[i]!;
+  if (b) {
+    tone(b, 0.16, "triangle", 0.14, bus.music);
+    tone(b * 0.5, 0.16, "triangle", 0.07, bus.music);
+  }
+  const l = lead[j]!;
+  if (l && step % 2 === 0) trumpet(l, 0.2, 0.055);
+  if (step % 2 === 1) tone(784, 0.05, "triangle", 0.025, bus.music);
+  if (step % 4 === 2) noise(0.04, 0.035, bus.music, 1800);
+  if (step % 32 === 0) tone(660, 0.22, "sawtooth", 0.04, bus.music, 280);
   step++;
 }
 
@@ -117,14 +135,14 @@ export const sfx = {
     tone(1320, 0.1, "square", 0.1, bus!.sfx);
   },
   stomp() {
-    noise(0.08, 0.22, bus!.sfx);
+    noise(0.08, 0.22, bus!.sfx, 400);
     tone(180, 0.1, "triangle", 0.12, bus!.sfx, -80);
   },
   bump() {
     tone(140, 0.08, "square", 0.14, bus!.sfx, -40);
   },
   break() {
-    noise(0.12, 0.2, bus!.sfx);
+    noise(0.12, 0.2, bus!.sfx, 500);
   },
   power() {
     tone(330, 0.08, "square", 0.12, bus!.sfx);
@@ -141,7 +159,7 @@ export const sfx = {
     tone(400, 0.4, "square", 0.12, bus!.sfx, -320);
   },
   flag() {
-    [523, 659, 784, 1046].forEach((f, i) => {
+    [392, 493.88, 587.33, 784].forEach((f, i) => {
       setTimeout(() => tone(f, 0.16, "square", 0.12, bus!.sfx), i * 90);
     });
   },
