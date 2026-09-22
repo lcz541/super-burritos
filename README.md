@@ -9,7 +9,7 @@ Play it live — no account, no sign-in:
 ## Controls
 
 - Move: A / D or arrows
-- Jump: W, Space, or Up (hold to go higher)
+- Jump: W, Space, or Up (hold to go higher). Press jump again in the air for a double jump.
 - Stomp nacho chips. Stomp tacos into shells, then kick the shells.
 - Hot sauce lets you throw salsa with J or Shift
 - Down on a burrito tube warps ahead

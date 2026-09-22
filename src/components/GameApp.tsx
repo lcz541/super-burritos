@@ -281,8 +281,8 @@ function HowTo({ onBack }: { onBack: () => void }) {
     <div>
       <h2 className="font-display text-3xl text-fg">How to play</h2>
       <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted">
-        <li>A / D or arrows move. W, Space, or Up jumps. Hold jump to go higher.</li>
-        <li>Stomp nacho chips. Stomp tacos into shells, then kick the shells.</li>
+        <li>A / D or arrows move. W, Space, or Up jumps. Tap jump again in the air for a double jump. Hold jump to go higher.</li>
+        <li>Stomp nacho chips. Stomp tacos into shells, then bump or stomp the shell to send it sliding.</li>
         <li>Bump mystery crates from below. Hot sauce lets you throw salsa with J or Shift.</li>
         <li>S / Down on a burrito tube warps ahead. Reach the chili flag to clear the course.</li>
         <li>Gamepad works too. On a phone, use the pads along the bottom.</li>

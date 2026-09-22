@@ -10,6 +10,8 @@ import {
   GRAVITY_APEX,
   APEX_V,
   JUMP_VEL,
+  DOUBLE_JUMP_VEL,
+  MAX_AIR_JUMPS,
   JUMP_CUT,
   MAX_FALL,
   ACCEL_G,
@@ -21,6 +23,9 @@ import {
   DROP_TIME,
   PW,
   PH,
+  STOMP_PAD,
+  HURT_PAD,
+  SHELL_SPEED,
   SAVE_KEY,
 } from "./const";
 import { createInput } from "./input";
@@ -72,6 +77,7 @@ type Player = {
   anim: number;
   clearing: boolean;
   jumpHeldPrev: boolean;
+  airJumps: number;
 };
 
 function loadHigh(): number {
@@ -137,6 +143,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     anim: 0,
     clearing: false,
     jumpHeldPrev: false,
+    airJumps: MAX_AIR_JUMPS,
   };
 
   let camX = 0;
@@ -229,9 +236,9 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     bumps.clear();
     for (const s of level.spawns) {
       if (s.kind === "nacho") {
-        enemies.push({ kind: "nacho", x: s.x, y: s.y, vx: -40, vy: 0, w: 16, h: 16, dir: -1, state: "walk", t: 0, dead: false });
+        enemies.push({ kind: "nacho", x: s.x, y: s.y, vx: -40, vy: 0, w: 24, h: 18, dir: -1, state: "walk", t: 0, dead: false });
       } else if (s.kind === "taco") {
-        enemies.push({ kind: "taco", x: s.x, y: s.y, vx: -36, vy: 0, w: 16, h: 20, dir: -1, state: "walk", t: 0, dead: false });
+        enemies.push({ kind: "taco", x: s.x, y: s.y, vx: -36, vy: 0, w: 24, h: 24, dir: -1, state: "walk", t: 0, dead: false });
       } else if (s.kind === "coin") {
         actors.push({ kind: "coin", x: s.x, y: s.y, t: Math.random(), dead: false, rising: 0 });
       } else if (s.kind === "sauce") {
@@ -260,6 +267,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     player.clearing = false;
     player.anim = 0;
     player.jumpHeldPrev = false;
+    player.airJumps = MAX_AIR_JUMPS;
     deathT = 0;
     clearT = 0;
     camX = player.x - VIEW_W * 0.3;
@@ -426,7 +434,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       const cx = tx * TILE + 8;
       const cy = ty * TILE - 8;
       if (kind === T.QSauce) {
-        actors.push({ kind: "sauce", x: cx, y: cy, t: 0, dead: false });
+        actors.push({ kind: "sauce", x: cx, y: ty * TILE - 2, t: 0, dead: false });
       } else {
         actors.push({ kind: "coin", x: cx, y: cy, t: 0, dead: false, rising: 0.35 });
       }
@@ -451,9 +459,42 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     }
   }
 
+  function hitEnemy(e: Enemy, pad: number) {
+    return aabb(player.x - pad, player.y, PW + pad * 2, PH, e.x, e.y, e.w, e.h);
+  }
+
+  function isStomp(e: Enemy) {
+    if (player.vy < -40) return false;
+    const feet = player.y + PH;
+    const band = e.y + Math.max(16, e.h * 0.72);
+    return feet <= band;
+  }
+
+  function toShell(e: Enemy) {
+    e.state = "shell";
+    e.vx = 0;
+    e.dead = false;
+    if (e.h > 16) {
+      e.y += e.h - 14;
+      e.h = 14;
+    }
+  }
+
+  function kickShell(e: Enemy, dir?: number) {
+    const side = dir ?? (player.x + PW / 2 < e.x + e.w / 2 ? -1 : 1);
+    e.state = "slide";
+    e.dead = false;
+    e.vx = -side * SHELL_SPEED;
+    e.dir = Math.sign(e.vx) || 1;
+    player.invuln = Math.max(player.invuln, 0.2);
+    play("bump");
+  }
+
   function stomp(e: Enemy) {
     player.vy = JUMP_VEL * 0.55;
     player.buffer = 0;
+    player.airJumps = MAX_AIR_JUMPS;
+    player.invuln = Math.max(player.invuln, 0.12);
     hitstop = reduced() ? 0 : 0.05;
     trauma = Math.min(1, trauma + 0.25);
     play("stomp");
@@ -467,15 +508,13 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       addScore(100, e.x, e.y);
       burst(e.x + 8, e.y + 8, "#e8c547", 7);
     } else if (e.state === "walk") {
-      e.state = "shell";
-      e.vx = 0;
-      e.h = 12;
-      e.y += 8;
+      toShell(e);
+      addScore(100, e.x, e.y);
+    } else if (e.state === "slide") {
+      toShell(e);
       addScore(100, e.x, e.y);
     } else {
-      e.state = "shell";
-      e.vx = 0;
-      addScore(100, e.x, e.y);
+      kickShell(e);
     }
   }
 
@@ -542,6 +581,14 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       player.stretch = 1.28;
       player.squash = 0.78;
       play("jump");
+    } else if (player.buffer > 0 && player.airJumps > 0 && !player.grounded) {
+      player.airJumps -= 1;
+      player.vy = DOUBLE_JUMP_VEL;
+      player.buffer = 0;
+      player.stretch = 1.2;
+      player.squash = 0.84;
+      play("jump");
+      burst(player.x + PW / 2, player.y + PH, "#f4e8d0", 6);
     }
     if (player.jumpHeldPrev && !a.jumpHeld && player.vy < 0) player.vy *= JUMP_CUT;
     player.jumpHeldPrev = a.jumpHeld;
@@ -582,6 +629,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       if (lastLandVy > 500) burst(player.x + PW / 2, player.y + PH, "#d9b48a", 5);
     }
     player.grounded = r.grounded;
+    if (r.grounded) player.airJumps = MAX_AIR_JUMPS;
     if (r.hitCeil && r.head) bumpTile(r.head.tx, r.head.ty, r.head.kind);
 
     if (player.x < TILE) player.x = TILE;
@@ -660,7 +708,16 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       if (e.state === "walk" && body.vx === 0) e.dir *= -1;
       e.x = body.x;
       e.y = body.y;
-      e.vx = e.state === "slide" ? body.vx : e.vx;
+      if (e.state === "slide") {
+        if (body.vx === 0) {
+          e.dir *= -1;
+          e.vx = e.dir * SHELL_SPEED;
+        } else {
+          e.vx = body.vx;
+        }
+      } else {
+        e.vx = e.vx;
+      }
       e.vy = r.grounded ? 0 : body.vy;
       e.t += dt;
 
@@ -711,8 +768,17 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
         if (r.hitCeil || a.bounces > 3 || a.x < 0 || a.x > W * TILE) a.dead = true;
         for (const e of enemies) {
           if (e.dead || e.state === "squash") continue;
-          if (aabb(a.x, a.y, 8, 8, e.x, e.y, e.w, e.h)) {
-            a.dead = true;
+          if (!aabb(a.x, a.y, 8, 8, e.x, e.y, e.w, e.h)) continue;
+          a.dead = true;
+          if (e.kind === "taco" && e.state === "walk") {
+            toShell(e);
+            addScore(100, e.x, e.y);
+            burst(e.x + 8, e.y + 8, "#c23b22", 6);
+            play("stomp");
+          } else if (e.kind === "taco" && (e.state === "shell" || e.state === "slide")) {
+            kickShell(e, a.vx >= 0 ? -1 : 1);
+            addScore(100, e.x, e.y);
+          } else {
             e.dead = true;
             e.state = "squash";
             e.t = 0;
@@ -732,36 +798,30 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     const py = player.y;
     for (const e of enemies) {
       if (e.dead || e.state === "squash") continue;
-      if (!aabb(px, py, PW, PH, e.x, e.y, e.w, e.h)) continue;
+      if (!hitEnemy(e, STOMP_PAD)) continue;
       if (e.state === "shell") {
-        const side = px + PW / 2 < e.x + e.w / 2 ? -1 : 1;
-        if (player.vy > 80) {
+        if (isStomp(e)) {
           stomp(e);
-        } else {
-          e.state = "slide";
-          e.vx = -side * 280;
-          player.vx = side * 80;
-          play("bump");
+        } else if (hitEnemy(e, HURT_PAD)) {
+          kickShell(e);
+          player.vx = (player.x + PW / 2 < e.x + e.w / 2 ? -1 : 1) * 90;
         }
         continue;
       }
       if (e.state === "slide") {
-        if (player.vy > 80 && py + PH < e.y + e.h * 0.7) {
-          stomp(e);
-        } else {
-          hurtPlayer();
-        }
+        if (isStomp(e)) stomp(e);
+        else if (hitEnemy(e, HURT_PAD)) hurtPlayer();
         continue;
       }
-      if (player.vy > 60 && py + PH - 6 <= e.y + 8) stomp(e);
-      else hurtPlayer();
+      if (isStomp(e)) stomp(e);
+      else if (hitEnemy(e, HURT_PAD)) hurtPlayer();
     }
     for (const a of actors) {
       if (a.kind === "coin" && !a.dead && a.rising <= 0 && aabb(px, py, PW, PH, a.x, a.y, 12, 12)) {
         a.dead = true;
         collectCoin(a.x, a.y);
       }
-      if (a.kind === "sauce" && !a.dead && aabb(px, py, PW, PH, a.x, a.y, 14, 18)) {
+      if (a.kind === "sauce" && !a.dead && aabb(px, py, PW, PH, a.x - 4, a.y - 4, 22, 26)) {
         a.dead = true;
         player.powered = true;
         play("power");
@@ -1064,6 +1124,9 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     setKeys: (codes: string[]) => input.setKeys(codes),
     getX: () => player.x,
     getVx: () => player.vx,
+    getY: () => player.y,
+    getVy: () => player.vy,
+    getAirJumps: () => player.airJumps,
     getMoveX: () => lastMoveX,
     getInjected: () => input.getInjected(),
     isDead: () => player.dead,
@@ -1113,6 +1176,9 @@ declare global {
       setKeys: (codes: string[]) => void;
       getX: () => number;
       getVx: () => number;
+      getY?: () => number;
+      getVy?: () => number;
+      getAirJumps?: () => number;
       getMoveX?: () => number;
       getInjected?: () => string[];
       isDead?: () => boolean;

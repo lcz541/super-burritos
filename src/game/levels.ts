@@ -95,10 +95,10 @@ function plains(): Level {
   L.set(38, 10, T.OneWay);
   L.set(39, 10, T.OneWay);
 
-  row(L, 18, 21, 9, T.QCoin);
-  L.set(19, 9, T.QSauce);
-  row(L, 54, 58, 9, T.Brick);
-  L.set(56, 9, T.QCoin);
+  row(L, 18, 21, 10, T.QCoin);
+  L.set(19, 10, T.QSauce);
+  row(L, 54, 58, 10, T.Brick);
+  L.set(56, 10, T.QCoin);
 
   pipe(L, 44, 3);
   pipe(L, 118, 4);
@@ -168,9 +168,9 @@ function grotto(): Level {
   row(L, 34, 40, 10, T.OneWay);
   row(L, 66, 72, 9, T.OneWay);
   row(L, 74, 80, 7, T.OneWay);
-  row(L, 108, 114, 9, T.Brick);
-  L.set(110, 9, T.QSauce);
-  L.set(112, 9, T.QCoin);
+  row(L, 108, 114, 10, T.Brick);
+  L.set(110, 10, T.QSauce);
+  L.set(112, 10, T.QCoin);
   row(L, 128, 134, 8, T.OneWay);
   row(L, 176, 182, 10, T.OneWay);
 
@@ -228,10 +228,10 @@ function hacienda(): Level {
 
   row(L, 26, 30, 10, T.OneWay);
   row(L, 54, 60, 9, T.OneWay);
-  row(L, 56, 62, 6, T.QCoin);
-  L.set(59, 6, T.QSauce);
-  row(L, 94, 100, 9, T.Brick);
-  L.set(97, 9, T.QCoin);
+  row(L, 56, 62, 7, T.QCoin);
+  L.set(59, 7, T.QSauce);
+  row(L, 94, 100, 10, T.Brick);
+  L.set(97, 10, T.QCoin);
   row(L, 118, 124, 8, T.OneWay);
   row(L, 148, 154, 9, T.Hard);
   row(L, 162, 168, 7, T.OneWay);
