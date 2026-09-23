@@ -1,5 +1,6 @@
 export type Actions = {
   moveX: number;
+  up: boolean;
   jump: boolean;
   jumpHeld: boolean;
   down: boolean;
@@ -88,6 +89,7 @@ export function createInput() {
       if (Math.abs(ax) > dz) a.moveX += Math.sign(ax);
       if (p.buttons[14]?.pressed) a.moveX -= 1;
       if (p.buttons[15]?.pressed) a.moveX += 1;
+      if (p.buttons[12]?.pressed) a.up = true;
       if (p.buttons[12]?.pressed || p.buttons[0]?.pressed) a.jumpHeld = true;
       if (p.buttons[13]?.pressed) a.down = true;
       if (p.buttons[2]?.pressed || p.buttons[1]?.pressed) a.fire = true;
@@ -97,9 +99,10 @@ export function createInput() {
 
   function sample(): Actions {
     const k = allKeys();
-    const a: Actions = { moveX: 0, jump: false, jumpHeld: false, down: false, fire: false, pause: false };
+    const a: Actions = { moveX: 0, up: false, jump: false, jumpHeld: false, down: false, fire: false, pause: false };
     if (k.has("KeyA") || k.has("ArrowLeft")) a.moveX -= 1;
     if (k.has("KeyD") || k.has("ArrowRight")) a.moveX += 1;
+    if (k.has("ArrowUp") || k.has("KeyW")) a.up = true;
     if (k.has("KeyW") || k.has("ArrowUp") || k.has("Space")) a.jumpHeld = true;
     if (k.has("KeyS") || k.has("ArrowDown")) a.down = true;
     if (k.has("KeyJ") || k.has("KeyK") || k.has("ShiftLeft") || k.has("ShiftRight")) a.fire = true;
@@ -108,6 +111,7 @@ export function createInput() {
     for (const act of pointers.values()) {
       if (act === "left") a.moveX -= 1;
       if (act === "right") a.moveX += 1;
+      if (act === "up") a.up = true;
       if (act === "jump") a.jumpHeld = true;
       if (act === "down") a.down = true;
       if (act === "fire") a.fire = true;

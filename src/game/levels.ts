@@ -80,11 +80,13 @@ function coins(spawns: Spawn[], x0: number, x1: number, y: number) {
 
 export function buildLevel(id: number): Level {
   if (id === 1) return grotto();
-  if (id === 2) return hacienda();
-  if (id === 3) return bowlArena();
-  if (id === 4) return tide();
-  if (id === 5) return coral();
-  if (id === 6) return trench();
+  if (id === 2) return chile();
+  if (id === 3) return hacienda();
+  if (id === 4) return bowlArena();
+  if (id === 5) return tide();
+  if (id === 6) return kelp();
+  if (id === 7) return coral();
+  if (id === 8) return trench();
   return plains();
 }
 
@@ -273,9 +275,9 @@ function hacienda(): Level {
   );
 
   return {
-    id: 2,
+    id: 3,
     name: "Hacienda Heights",
-    world: "1-3",
+    world: "1-4",
     theme: "overworld",
     w,
     h,
@@ -288,17 +290,136 @@ function hacienda(): Level {
   };
 }
 
-export const LEVEL_COUNT = 7;
+export const LEVEL_COUNT = 9;
 
-export const MAP_NODES: { id: number; x: number; y: number; label: string; name: string; water: boolean; boss: boolean }[] = [
-  { id: 0, x: 78, y: 248, label: "1-1", name: "Salsa Plains", water: false, boss: false },
-  { id: 1, x: 168, y: 186, label: "1-2", name: "Guacamole Grotto", water: false, boss: false },
-  { id: 2, x: 256, y: 236, label: "1-3", name: "Hacienda Heights", water: false, boss: false },
-  { id: 3, x: 338, y: 148, label: "1-4", name: "Nacho Bowl", water: false, boss: true },
-  { id: 4, x: 430, y: 214, label: "2-1", name: "Tide Pool", water: true, boss: false },
-  { id: 5, x: 512, y: 150, label: "2-2", name: "Coral Current", water: true, boss: false },
-  { id: 6, x: 586, y: 228, label: "2-3", name: "Octopus Trench", water: true, boss: false },
+export type ShopKind = "salsa" | "queso" | "cantina";
+
+export type MapStop = {
+  key: string;
+  kind: "level" | "shop";
+  x: number;
+  y: number;
+  label: string;
+  name: string;
+  levelId?: number;
+  water?: boolean;
+  boss?: boolean;
+  shop?: ShopKind;
+};
+
+export const MAP_STOPS: MapStop[] = [
+  { key: "l0", kind: "level", levelId: 0, x: 72, y: 268, label: "1-1", name: "Salsa Plains" },
+  { key: "s0", kind: "shop", shop: "salsa", x: 132, y: 186, label: "Casa", name: "Salsa Casa" },
+  { key: "l1", kind: "level", levelId: 1, x: 188, y: 220, label: "1-2", name: "Guacamole Grotto" },
+  { key: "l2", kind: "level", levelId: 2, x: 310, y: 292, label: "1-3", name: "Chile Ridge" },
+  { key: "l3", kind: "level", levelId: 3, x: 440, y: 214, label: "1-4", name: "Hacienda Heights" },
+  { key: "s1", kind: "shop", shop: "queso", x: 440, y: 308, label: "Stand", name: "Queso Stand" },
+  { key: "l4", kind: "level", levelId: 4, x: 584, y: 176, label: "1-5", name: "Nacho Bowl", boss: true },
+  { key: "l5", kind: "level", levelId: 5, x: 420, y: 72, label: "2-1", name: "Tide Pool", water: true },
+  { key: "s2", kind: "shop", shop: "cantina", x: 584, y: 72, label: "Cantina", name: "Pier Cantina" },
+  { key: "l6", kind: "level", levelId: 6, x: 320, y: 108, label: "2-2", name: "Kelp Alley", water: true },
+  { key: "l7", kind: "level", levelId: 7, x: 180, y: 68, label: "2-3", name: "Coral Current", water: true },
+  { key: "l8", kind: "level", levelId: 8, x: 64, y: 78, label: "2-4", name: "Octopus Trench", water: true },
 ];
+
+export const MAP_LINKS: { a: string; b: string; bow: number }[] = [
+  { a: "l0", b: "s0", bow: 16 },
+  { a: "l0", b: "l1", bow: 20 },
+  { a: "l1", b: "l2", bow: -18 },
+  { a: "l2", b: "l3", bow: 16 },
+  { a: "l3", b: "s1", bow: 8 },
+  { a: "l3", b: "l4", bow: -18 },
+  { a: "l4", b: "l5", bow: 8 },
+  { a: "l5", b: "s2", bow: -12 },
+  { a: "l5", b: "l6", bow: 14 },
+  { a: "l6", b: "l7", bow: -16 },
+  { a: "l7", b: "l8", bow: 14 },
+];
+
+export const SHOP_PRICES = { life: 20, sauce: 40, boots: 50 } as const;
+
+function chile(): Level {
+  const w = 120;
+  const h = 16;
+  const L = make(w, h, 13);
+  const spawns: Spawn[] = [];
+  pit(L, 22, 27);
+  pit(L, 58, 64);
+  pit(L, 90, 96);
+  stairs(L, 30, 4, 1);
+  stairs(L, 48, 4, -1);
+  row(L, 36, 44, 8, T.Brick);
+  L.set(40, 8, T.QCoin);
+  row(L, 66, 74, 9, T.OneWay);
+  row(L, 78, 84, 7, T.Brick);
+  L.set(80, 7, T.QSauce);
+  pipe(L, 16, 2);
+  coins(spawns, 36, 44, 7);
+  coins(spawns, 66, 74, 8);
+  spawns.push(
+    { kind: "nacho", x: 18 * TILE, y: 12 * TILE },
+    { kind: "taco", x: 34 * TILE, y: 12 * TILE },
+    { kind: "nacho", x: 52 * TILE, y: 12 * TILE },
+    { kind: "taco", x: 70 * TILE, y: 12 * TILE },
+    { kind: "nacho", x: 86 * TILE, y: 12 * TILE },
+    { kind: "taco", x: 100 * TILE, y: 12 * TILE },
+    { kind: "flag", x: 112 * TILE, y: 10 * TILE },
+  );
+  return {
+    id: 2,
+    name: "Chile Ridge",
+    world: "1-3",
+    theme: "overworld",
+    w,
+    h,
+    tiles: L.t,
+    spawns,
+    warps: [],
+    spawnX: 4 * TILE,
+    spawnY: 13 * TILE - 22,
+    time: 340,
+  };
+}
+
+function kelp(): Level {
+  const w = 120;
+  const h = 16;
+  const L = make(w, h, 13);
+  const spawns: Spawn[] = [];
+  pit(L, 18, 24);
+  pit(L, 46, 54);
+  pit(L, 78, 86);
+  row(L, 20, 24, 8, T.OneWay);
+  row(L, 32, 40, 6, T.OneWay);
+  row(L, 56, 64, 9, T.Brick);
+  L.set(60, 9, T.QCoin);
+  row(L, 88, 96, 7, T.OneWay);
+  coins(spawns, 32, 40, 5);
+  coins(spawns, 88, 96, 6);
+  spawns.push(
+    { kind: "fish", x: 16 * TILE, y: 7 * TILE },
+    { kind: "fish", x: 36 * TILE, y: 5 * TILE },
+    { kind: "octo", x: 50 * TILE, y: 8 * TILE },
+    { kind: "fish", x: 70 * TILE, y: 6 * TILE },
+    { kind: "octo", x: 92 * TILE, y: 8 * TILE },
+    { kind: "fish", x: 104 * TILE, y: 5 * TILE },
+    { kind: "flag", x: 112 * TILE, y: 10 * TILE },
+  );
+  return {
+    id: 6,
+    name: "Kelp Alley",
+    world: "2-2",
+    theme: "water",
+    w,
+    h,
+    tiles: L.t,
+    spawns,
+    warps: [],
+    spawnX: 4 * TILE,
+    spawnY: 9 * TILE,
+    time: 380,
+  };
+}
 
 function bowlArena(): Level {
   const w = 36;
@@ -309,9 +430,9 @@ function bowlArena(): Level {
   row(L, 5, 9, 7, T.Brick);
   L.set(7, 7, T.QCoin);
   return {
-    id: 3,
+    id: 4,
     name: "Nacho Bowl",
-    world: "1-4",
+    world: "1-5",
     theme: "overworld",
     boss: true,
     w,
@@ -353,7 +474,7 @@ function tide(): Level {
     { kind: "flag", x: 140 * TILE, y: 10 * TILE },
   );
   return {
-    id: 4,
+    id: 5,
     name: "Tide Pool",
     world: "2-1",
     theme: "water",
@@ -398,9 +519,9 @@ function coral(): Level {
     { kind: "flag", x: 148 * TILE, y: 10 * TILE },
   );
   return {
-    id: 5,
+    id: 7,
     name: "Coral Current",
-    world: "2-2",
+    world: "2-3",
     theme: "water",
     w,
     h,
@@ -446,9 +567,9 @@ function trench(): Level {
     { kind: "flag", x: 160 * TILE, y: 10 * TILE },
   );
   return {
-    id: 6,
+    id: 8,
     name: "Octopus Trench",
-    world: "2-3",
+    world: "2-4",
     theme: "water",
     w,
     h,

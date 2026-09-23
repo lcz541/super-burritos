@@ -4,6 +4,7 @@ import { createGame } from "@/game/engine";
 import { useGame } from "@/game/store";
 import { unlockAudio, setMuted } from "@/game/audio";
 import { ShareSheet } from "@/components/ShareSheet";
+import { SHOP_PRICES } from "@/game/levels";
 import { padScore, type SharePayload } from "@/lib/share";
 
 export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
@@ -12,6 +13,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
   const hud = useGame();
   const [share, setShare] = useState<SharePayload | null>(null);
+  const [shopNote, setShopNote] = useState("");
   const rival = rivalScore;
 
   useEffect(() => {
@@ -24,6 +26,18 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
       gameRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    setShopNote("");
+  }, [hud.phase]);
+
+  function buy(id: "life" | "sauce" | "boots") {
+    const result = gameRef.current?.buyUpgrade(id);
+    if (result === "broke") setShopNote("Not enough coins.");
+    else if (result === "full") setShopNote("You can't carry more lives.");
+    else if (result === "owned") setShopNote("You already have that.");
+    else setShopNote("");
+  }
 
   function begin() {
     unlockAudio();
@@ -54,8 +68,9 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
   const showEnd = hud.phase === "gameover" || hud.phase === "win";
   const showClear = hud.phase === "clear";
   const onMap = hud.phase === "map";
+  const inShop = hud.phase === "shop";
   const playing = hud.phase === "playing" || hud.phase === "dead" || hud.phase === "paused" || hud.phase === "clear";
-  const showHud = playing || onMap;
+  const showHud = playing || onMap || inShop;
   const beatRival = rival != null && hud.score > rival;
   const missedRival = rival != null && hud.score <= rival;
 
@@ -84,7 +99,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
       {onMap && (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 px-4 text-center">
           <p className="font-display text-2xl text-fg drop-shadow">{hud.message || "World map"}</p>
-          <p className="text-sm text-fg">Move between courses, then jump to play</p>
+          <p className="text-sm text-fg">Walk the curves. Jump to enter a course or a casa.</p>
         </div>
       )}
 
@@ -224,11 +239,61 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
         </Modal>
       )}
 
+      {inShop && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-bg/70 px-4 pb-24 pt-8">
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 text-ink shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">Casa</p>
+            <h2 className="mt-1 font-display text-3xl text-ink">{hud.message || "Shop"}</h2>
+            <p className="mt-2 text-sm text-muted">{hud.coins} coins on the table.</p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => buy("life")}
+                className="flex h-12 items-center justify-between rounded-md bg-primary px-4 font-semibold text-primary-fg"
+              >
+                <span>Extra life</span>
+                <span>{SHOP_PRICES.life} coins</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => buy("sauce")}
+                disabled={hud.pocketSauce}
+                className="flex h-12 items-center justify-between rounded-md border border-border bg-surface-2 px-4 font-semibold text-ink disabled:opacity-50"
+              >
+                <span>{hud.pocketSauce ? "Hot sauce packed" : "Pocket hot sauce"}</span>
+                <span>{SHOP_PRICES.sauce}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => buy("boots")}
+                disabled={hud.chileBoots}
+                className="flex h-12 items-center justify-between rounded-md border border-border bg-surface-2 px-4 font-semibold text-ink disabled:opacity-50"
+              >
+                <span>{hud.chileBoots ? "Chile boots on" : "Chile boots"}</span>
+                <span>{SHOP_PRICES.boots}</span>
+              </button>
+            </div>
+            {shopNote ? <p className="mt-3 text-sm text-primary">{shopNote}</p> : null}
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              Hot sauce starts the next course as a gunslinger. Boots add a jump for the rest of this run.
+            </p>
+            <button
+              type="button"
+              onClick={() => gameRef.current?.closeShop()}
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-md border border-border bg-surface-2 font-semibold text-ink"
+            >
+              Back to the mesa
+            </button>
+          </div>
+        </div>
+      )}
+
       {share && <ShareSheet payload={share} onClose={() => setShare(null)} />}
 
       <div className="touch-pad pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between px-3 pb-[max(12px,env(safe-area-inset-bottom))] md:hidden">
         <div className="pointer-events-auto flex gap-2">
           <Pad act="left" label="Left" />
+          {onMap && <Pad act="up" label="Up" />}
           <Pad act="right" label="Right" />
           <Pad act="down" label="Down" />
         </div>
@@ -299,7 +364,8 @@ function HowTo({ onBack }: { onBack: () => void }) {
         <li>A / D or arrows move. W, Space, or Up jumps. Tap jump again in the air for a double jump. Hold jump to go higher.</li>
         <li>Stomp nacho chips. Stomp tacos into shells, then bump or stomp the shell to send it sliding.</li>
         <li>World 1 ends at the Nacho Bowl. It spits chips — jump on those chips until the bowl spills.</li>
-        <li>The map works like a trail of courses. Walk to the next one. World 2 is underwater: jump to swim, stomp fish tacos and sombrero octopuses, and dodge ink.</li>
+        <li>World 2 is underwater: jump to swim, stomp fish tacos and sombrero octopuses, and dodge ink.</li>
+        <li>The map is a mesa of food. The path curves. Little casas sell an extra life, pocket hot sauce, and chile boots. Spend the coins you pick up.</li>
         <li>
           Bump mystery crates from below. Hot sauce turns you into a salsa gunslinger. Shoot with{" "}
           <span className="font-semibold text-ink">J</span>, <span className="font-semibold text-ink">K</span>, or{" "}

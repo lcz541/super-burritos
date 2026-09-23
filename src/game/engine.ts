@@ -29,8 +29,8 @@ import {
   SAVE_KEY,
 } from "./const";
 import { createInput } from "./input";
-import { loadArt, drawSheet, type Art } from "./assets";
-import { buildLevel, LEVEL_COUNT, MAP_NODES, type Level } from "./levels";
+import { loadArt, drawSheet, type Art, type Sheet } from "./assets";
+import { buildLevel, LEVEL_COUNT, MAP_LINKS, MAP_STOPS, SHOP_PRICES, type Level, type MapStop } from "./levels";
 import { useGame, type Hud, type Phase } from "./store";
 import { unlockAudio, startMusic, stopMusic, tickMusic, play, setMuted } from "./audio";
 
@@ -101,8 +101,13 @@ function loadSave(): { high: number; cleared: number } {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return { high: 0, cleared: -1 };
-    const p = JSON.parse(raw) as { high?: number; cleared?: number };
-    return { high: p.high ?? 0, cleared: typeof p.cleared === "number" ? p.cleared : -1 };
+    const p = JSON.parse(raw) as { high?: number; cleared?: number; version?: number };
+    let cleared = typeof p.cleared === "number" ? p.cleared : -1;
+    if ((p.version ?? 1) < 3 && cleared >= 0) {
+      const map = [0, 1, 3, 4, 5, 7, 8];
+      cleared = map[Math.min(cleared, map.length - 1)] ?? cleared;
+    }
+    return { high: p.high ?? 0, cleared };
   } catch {
     return { high: 0, cleared: -1 };
   }
@@ -110,7 +115,7 @@ function loadSave(): { high: number; cleared: number } {
 
 function saveSave(high: number, cleared: number) {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 2, high, cleared }));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 3, high, cleared }));
   } catch {
     /* ignore */
   }
@@ -177,8 +182,10 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
   let hudAcc = 0;
   let high = 0;
   let cleared = -1;
-  let mapIndex = 0;
+  let mapKey = "l0";
   let mapCd = 0;
+  let pocketSauce = false;
+  let chileBoots = false;
   let spawnX = 0;
   let spawnY = 0;
   let deathT = 0;
@@ -292,7 +299,11 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     player.clearing = false;
     player.anim = 0;
     player.jumpHeldPrev = false;
-    player.airJumps = MAX_AIR_JUMPS;
+    player.airJumps = jumpStock();
+    if (pocketSauce) {
+      player.powered = true;
+      pocketSauce = false;
+    }
     deathT = 0;
     clearT = 0;
     camX = player.x - VIEW_W * 0.3;
@@ -326,11 +337,48 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     sync({ world: level.world, time: level.time });
   }
 
-  function showMap(select?: number) {
-    if (select != null) mapIndex = Math.max(0, Math.min(LEVEL_COUNT - 1, select));
-    const node = MAP_NODES[mapIndex] ?? MAP_NODES[0]!;
+  function jumpStock() {
+    return MAX_AIR_JUMPS + (chileBoots ? 1 : 0);
+  }
+
+  function stopByKey(key: string) {
+    return MAP_STOPS.find((s) => s.key === key) ?? MAP_STOPS[0]!;
+  }
+
+  function openThrough() {
+    const nextId = Math.min(LEVEL_COUNT - 1, Math.max(0, cleared + 1));
+    let idx = 0;
+    MAP_STOPS.forEach((s, i) => {
+      if (s.kind === "level" && (s.levelId ?? 99) <= nextId) idx = i;
+    });
+    return idx;
+  }
+
+  function isOpen(s: MapStop) {
+    return MAP_STOPS.indexOf(s) <= openThrough();
+  }
+
+  function neighborsOf(key: string) {
+    const out: MapStop[] = [];
+    for (const e of MAP_LINKS) {
+      const other = e.a === key ? e.b : e.b === key ? e.a : "";
+      if (!other) continue;
+      const s = stopByKey(other);
+      if (isOpen(s)) out.push(s);
+    }
+    return out;
+  }
+
+  function showMap(levelId?: number) {
+    if (levelId != null) {
+      const beaten = MAP_STOPS.find((s) => s.kind === "level" && s.levelId === levelId - 1);
+      const ahead = beaten ? MAP_STOPS[MAP_STOPS.indexOf(beaten) + 1] : undefined;
+      const next = MAP_STOPS.find((s) => s.levelId === levelId);
+      mapKey = (ahead ?? next ?? MAP_STOPS[0]!).key;
+    }
+    const node = stopByKey(mapKey);
     setPhase("map", node.name);
-    sync({ world: node.label, message: node.name });
+    sync({ world: node.label, message: node.name, pocketSauce, chileBoots });
     startMusic();
   }
 
@@ -350,8 +398,12 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
     score = 0;
     coins = 0;
     player.powered = false;
-    sync();
-    showMap(Math.min(LEVEL_COUNT - 1, Math.max(0, cleared + 1)));
+    pocketSauce = false;
+    chileBoots = false;
+    sync({ pocketSauce: false, chileBoots: false });
+    const nextId = Math.min(LEVEL_COUNT - 1, Math.max(0, cleared + 1));
+    mapKey = MAP_STOPS.find((s) => s.levelId === nextId)?.key ?? "l0";
+    showMap();
   }
 
   function collectCoin(x: number, y: number) {
@@ -549,7 +601,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
   function stomp(e: Enemy) {
     player.vy = JUMP_VEL * 0.55;
     player.buffer = 0;
-    player.airJumps = MAX_AIR_JUMPS;
+    player.airJumps = jumpStock();
     player.invuln = Math.max(player.invuln, 0.12);
     hitstop = reduced() ? 0 : 0.05;
     trauma = Math.min(1, trauma + 0.25);
@@ -712,7 +764,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       if (lastLandVy > 500) burst(player.x + PW / 2, player.y + PH, "#d9b48a", 5);
     }
     player.grounded = r.grounded;
-    if (r.grounded) player.airJumps = MAX_AIR_JUMPS;
+    if (r.grounded) player.airJumps = jumpStock();
     if (r.hitCeil && r.head) bumpTile(r.head.tx, r.head.ty, r.head.kind);
 
     if (player.x < TILE) player.x = TILE;
@@ -1031,26 +1083,75 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
   function stepMap(dt: number, a: ReturnType<ReturnType<typeof createInput>["sample"]>) {
     mapCd = Math.max(0, mapCd - dt);
     player.anim += dt;
-    const unlocked = Math.min(LEVEL_COUNT - 1, cleared + 1);
     let moved = false;
-    if (mapCd <= 0 && a.moveX > 0 && mapIndex < unlocked) {
-      mapIndex += 1;
-      mapCd = 0.2;
-      moved = true;
-      play("bump");
-    } else if (mapCd <= 0 && a.moveX < 0 && mapIndex > 0) {
-      mapIndex -= 1;
-      mapCd = 0.2;
-      moved = true;
-      play("bump");
+    const ax = a.moveX;
+    const ay = (a.up ? -1 : 0) + (a.down ? 1 : 0);
+    if (mapCd <= 0 && (ax !== 0 || ay !== 0)) {
+      const here = stopByKey(mapKey);
+      const len = Math.hypot(ax, ay) || 1;
+      const ux = ax / len;
+      const uy = ay / len;
+      let best: MapStop | null = null;
+      let bestDot = 0.34;
+      for (const n of neighborsOf(mapKey)) {
+        const dx = n.x - here.x;
+        const dy = n.y - here.y;
+        const nlen = Math.hypot(dx, dy) || 1;
+        const dot = (dx / nlen) * ux + (dy / nlen) * uy;
+        if (dot > bestDot) {
+          bestDot = dot;
+          best = n;
+        }
+      }
+      if (best) {
+        mapKey = best.key;
+        mapCd = 0.18;
+        moved = true;
+        play("bump");
+        sync({ world: best.label, message: best.name, pocketSauce, chileBoots });
+      }
     }
-    const node = MAP_NODES[mapIndex];
-    if (moved && node) sync({ world: node.label, message: node.name });
-    if (a.jump && mapIndex <= unlocked) {
-      loadLevel(mapIndex);
+    if (moved || !a.jump) return;
+    const here = stopByKey(mapKey);
+    if (!isOpen(here)) return;
+    if (here.kind === "shop") {
+      setPhase("shop", here.name);
+      sync({ world: here.label, message: here.name, pocketSauce, chileBoots });
+      return;
+    }
+    if (here.levelId != null) {
+      loadLevel(here.levelId);
       setPhase("playing", "");
       startMusic();
     }
+  }
+
+  function buyUpgrade(id: "life" | "sauce" | "boots") {
+    if (id === "life") {
+      if (lives >= 8) return "full";
+      if (coins < SHOP_PRICES.life) return "broke";
+      coins -= SHOP_PRICES.life;
+      lives += 1;
+    } else if (id === "sauce") {
+      if (pocketSauce) return "owned";
+      if (coins < SHOP_PRICES.sauce) return "broke";
+      coins -= SHOP_PRICES.sauce;
+      pocketSauce = true;
+    } else {
+      if (chileBoots) return "owned";
+      if (coins < SHOP_PRICES.boots) return "broke";
+      coins -= SHOP_PRICES.boots;
+      chileBoots = true;
+    }
+    play("power");
+    sync({ pocketSauce, chileBoots });
+    return "ok";
+  }
+
+  function closeShop() {
+    const node = stopByKey(mapKey);
+    setPhase("map", node.name);
+    sync({ world: node.label, message: node.name, pocketSauce, chileBoots });
   }
 
   function step(dt: number) {
@@ -1064,6 +1165,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       stepMap(dt, input.sample());
       return;
     }
+    if (phase === "shop") return;
     if (phase === "paused") {
       const a = input.sample();
       if (a.pause || a.jump) setPhase("playing");
@@ -1320,58 +1422,123 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
 
   function drawMap() {
     if (!art) return;
-    const g = ctx.createLinearGradient(0, 0, VIEW_W, 0);
-    g.addColorStop(0, "#e7b56a");
-    g.addColorStop(0.46, "#c9843a");
-    g.addColorStop(0.52, "#1f86c4");
-    g.addColorStop(1, "#0b4f86");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    ctx.fillStyle = "#f4e2b0";
-    ctx.fillRect(0, 250, 360, 110);
-    ctx.fillStyle = "#0a3e6e";
-    ctx.fillRect(360, 250, 280, 110);
-    ctx.strokeStyle = "#fff6e8";
-    ctx.lineWidth = 6;
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    MAP_NODES.forEach((n, i) => {
-      if (i === 0) ctx.moveTo(n.x, n.y);
-      else ctx.lineTo(n.x, n.y);
-    });
-    ctx.stroke();
-    const unlocked = Math.min(LEVEL_COUNT - 1, cleared + 1);
-    for (const n of MAP_NODES) {
-      const open = n.id <= unlocked;
-      const done = n.id <= cleared;
+    const bands = ["#c44112", "#f15a24", "#fff6e8", "#2f7d32", "#f4c430", "#1f6fbf"];
+    for (let y = 0; y < VIEW_H; y += 16) {
+      ctx.fillStyle = bands[(y / 16) % bands.length]!;
+      ctx.fillRect(0, y, VIEW_W, 16);
+    }
+    ctx.fillStyle = "rgba(255, 246, 232, 0.28)";
+    ctx.fillRect(14, 46, VIEW_W - 28, VIEW_H - 60);
+
+    const props: { kind: "sheet" | "img"; src: Sheet | HTMLImageElement; x: number; y: number; w: number; h: number; rot: number }[] = [
+      { kind: "sheet", src: art.taco, x: 250, y: 168, w: 36, h: 36, rot: 0.2 },
+      { kind: "sheet", src: art.nacho, x: 292, y: 188, w: 32, h: 32, rot: -0.25 },
+      { kind: "sheet", src: art.coin, x: 268, y: 150, w: 16, h: 16, rot: 0.4 },
+      { kind: "img", src: art.hotsauce, x: 40, y: 320, w: 16, h: 22, rot: -0.3 },
+      { kind: "sheet", src: art.fish, x: 610, y: 250, w: 30, h: 22, rot: 0.4 },
+      { kind: "img", src: art.bowl, x: 250, y: 40, w: 36, h: 26, rot: 0.1 },
+    ];
+    for (const d of props) {
+      ctx.save();
+      ctx.translate(d.x, d.y);
+      ctx.rotate(d.rot);
+      if (d.kind === "sheet") drawSheet(ctx, d.src as Sheet, 0, -d.w / 2, -d.h / 2, d.w, d.h);
+      else ctx.drawImage(d.src as HTMLImageElement, -d.w / 2, -d.h / 2, d.w, d.h);
+      ctx.restore();
+    }
+
+    const drawLink = (open: boolean) => {
       ctx.beginPath();
-      ctx.fillStyle = !open ? "#6b5344" : n.boss ? "#f15a24" : n.water ? "#7fd0ff" : "#fff6e8";
-      ctx.arc(n.x, n.y, n.boss ? 16 : 13, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.lineWidth = n.id === mapIndex ? 4 : 2;
-      ctx.strokeStyle = done ? "#2f7d32" : "#2a1208";
+      for (const e of MAP_LINKS) {
+        const a = stopByKey(e.a);
+        const b = stopByKey(e.b);
+        const destOpen = isOpen(a) && isOpen(b);
+        if (destOpen !== open) continue;
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const cx = mx + (-dy / len) * e.bow;
+        const cy = my + (dx / len) * e.bow;
+        ctx.moveTo(a.x, a.y);
+        ctx.quadraticCurveTo(cx, cy, b.x, b.y);
+      }
       ctx.stroke();
+    };
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#6b3a22";
+    ctx.lineWidth = 12;
+    drawLink(false);
+    ctx.strokeStyle = "#e8a317";
+    ctx.lineWidth = 14;
+    drawLink(true);
+    ctx.strokeStyle = "#ffe08a";
+    ctx.lineWidth = 7;
+    drawLink(true);
+
+    for (const n of MAP_STOPS) {
+      const open = isOpen(n);
+      const done = n.kind === "level" && (n.levelId ?? 99) <= cleared;
+      const here = n.key === mapKey;
+      ctx.save();
+      ctx.globalAlpha = open ? 1 : 0.4;
+      if (n.kind === "shop") {
+        ctx.fillStyle = "#fff6e8";
+        ctx.fillRect(n.x - 16, n.y - 6, 32, 20);
+        ctx.fillStyle = "#f15a24";
+        ctx.beginPath();
+        ctx.moveTo(n.x - 20, n.y - 6);
+        ctx.lineTo(n.x, n.y - 24);
+        ctx.lineTo(n.x + 20, n.y - 6);
+        ctx.fill();
+        for (let i = 0; i < 4; i++) {
+          ctx.fillStyle = i % 2 ? "#c44112" : "#fff6e8";
+          ctx.fillRect(n.x - 16 + i * 8, n.y - 6, 8, 7);
+        }
+        ctx.fillStyle = "#2a1208";
+        ctx.fillRect(n.x - 4, n.y + 2, 8, 12);
+        if (n.shop === "salsa") ctx.drawImage(art.hotsauce, n.x - 8, n.y - 22, 14, 16);
+        else if (n.shop === "queso") drawSheet(ctx, art.coin, 0, n.x - 8, n.y - 22, 16, 16);
+        else drawSheet(ctx, art.taco, 0, n.x - 10, n.y - 24, 20, 20);
+      } else {
+        ctx.fillStyle = "#fffdf8";
+        ctx.beginPath();
+        ctx.ellipse(n.x, n.y + 6, 16, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = here ? 3 : 2;
+        ctx.strokeStyle = done ? "#2f7d32" : here ? "#f15a24" : "#2a1208";
+        ctx.stroke();
+        if (n.boss) ctx.drawImage(art.bowl, n.x - 16, n.y - 22, 32, 26);
+        else if (n.water) drawSheet(ctx, art.fish, 0, n.x - 16, n.y - 20, 32, 24);
+        else drawSheet(ctx, n.levelId === 1 ? art.taco : art.nacho, 0, n.x - 14, n.y - 22, 28, 28);
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(255, 246, 232, 0.92)";
+      const tag = n.boss ? "BOSS" : n.label;
+      ctx.font = "700 10px Nunito, sans-serif";
+      const tw = ctx.measureText(tag).width + 8;
+      ctx.fillRect(n.x - tw / 2, n.y + 16, tw, 13);
       ctx.fillStyle = "#2a1208";
-      ctx.font = "700 11px Nunito, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(n.boss ? "BOSS" : n.label, n.x, n.y + 28);
+      ctx.fillText(tag, n.x, n.y + 26);
+      ctx.restore();
     }
-    const here = MAP_NODES[mapIndex];
-    if (here) {
-      const bob = Math.sin(player.anim * 6) * 3;
-      drawSheet(ctx, art.heroIdle, Math.floor(player.anim * 6), here.x - 18, here.y - 46 + bob, 36, 36, false);
-    }
+
+    const here = stopByKey(mapKey);
+    const bob = Math.sin(player.anim * 6) * 3;
+    drawSheet(ctx, art.heroIdle, Math.floor(player.anim * 6), here.x - 16, here.y - 48 + bob, 32, 32, false);
+
+    ctx.fillStyle = "rgba(255, 246, 232, 0.94)";
+    ctx.fillRect(0, 0, VIEW_W, 36);
+    ctx.fillStyle = "#2a1208";
+    ctx.font = "700 20px 'Lilita One', sans-serif";
     ctx.textAlign = "left";
-    ctx.fillStyle = "#fff8f0";
-    ctx.font = "700 22px 'Lilita One', sans-serif";
-    ctx.fillText("WORLD MAP", 16, 32);
-    ctx.font = "700 14px Nunito, sans-serif";
-    ctx.fillText("Land  ·  then the tide", 16, 52);
-    const name = here?.name ?? "";
+    ctx.fillText("LA MESA", 12, 25);
+    ctx.font = "700 13px Nunito, sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(name, VIEW_W - 16, 32);
-    ctx.font = "600 12px Nunito, sans-serif";
-    ctx.fillText("Move, then jump", VIEW_W - 16, 50);
+    ctx.fillText(here.name, VIEW_W - 12, 24);
     ctx.textAlign = "left";
   }
 
@@ -1384,7 +1551,7 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
       return;
     }
     const phase = useGame.getState().phase;
-    if (phase === "map") {
+    if (phase === "map" || phase === "shop") {
       drawMap();
       return;
     }
@@ -1447,6 +1614,8 @@ export function createGame(canvas: HTMLCanvasElement, root: HTMLElement) {
 
   return {
     start: startRun,
+    buyUpgrade,
+    closeShop,
     pause() {
       const p = useGame.getState().phase;
       if (p === "playing") setPhase("paused");

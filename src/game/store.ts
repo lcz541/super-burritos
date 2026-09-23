@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type Phase = "loading" | "title" | "howto" | "map" | "playing" | "paused" | "dead" | "clear" | "gameover" | "win";
+export type Phase = "loading" | "title" | "howto" | "map" | "shop" | "playing" | "paused" | "dead" | "clear" | "gameover" | "win";
 
 export type Hud = {
   phase: Phase;
@@ -14,6 +14,8 @@ export type Hud = {
   muted: boolean;
   message: string;
   ready: boolean;
+  pocketSauce: boolean;
+  chileBoots: boolean;
 };
 
 const initial: Hud = {
@@ -28,6 +30,8 @@ const initial: Hud = {
   muted: false,
   message: "",
   ready: false,
+  pocketSauce: false,
+  chileBoots: false,
 };
 
 type GameStore = Hud & {
