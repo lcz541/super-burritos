@@ -24,6 +24,9 @@ export type Art = {
   hotsauce: HTMLImageElement;
   nachoSquash: HTMLImageElement;
   tacoShell: HTMLImageElement;
+  bowl: HTMLImageElement;
+  fish: Sheet;
+  octo: Sheet;
   tileGround: HTMLImageElement;
   tileDirt: HTMLImageElement;
   tileUsed: HTMLImageElement;
@@ -70,6 +73,9 @@ export async function loadArt(): Promise<Art> {
     hotsauce,
     nachoSquash,
     tacoShell,
+    bowl,
+    fish,
+    octo,
     tileGround,
     tileDirt,
     tileUsed,
@@ -99,6 +105,9 @@ export async function loadArt(): Promise<Art> {
     loadImg("/sprites/hotsauce.png"),
     loadImg("/sprites/nacho-squash.png"),
     loadImg("/sprites/taco-shell.png"),
+    loadImg("/sprites/nacho-bowl.png"),
+    loadImg("/sprites/fish-taco.png"),
+    loadImg("/sprites/octopus.png"),
     loadImg("/sprites/tile-ground.png"),
     loadImg("/sprites/tile-dirt.png"),
     loadImg("/sprites/tile-used.png"),
@@ -129,6 +138,9 @@ export async function loadArt(): Promise<Art> {
     hotsauce,
     nachoSquash,
     tacoShell,
+    bowl,
+    fish: sheet(fish, 2, 2),
+    octo: sheet(octo, 2, 2),
     tileGround,
     tileDirt,
     tileUsed,

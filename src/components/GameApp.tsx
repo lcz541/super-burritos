@@ -53,7 +53,9 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
   const showPause = hud.phase === "paused";
   const showEnd = hud.phase === "gameover" || hud.phase === "win";
   const showClear = hud.phase === "clear";
+  const onMap = hud.phase === "map";
   const playing = hud.phase === "playing" || hud.phase === "dead" || hud.phase === "paused" || hud.phase === "clear";
+  const showHud = playing || onMap;
   const beatRival = rival != null && hud.score > rival;
   const missedRival = rival != null && hud.score <= rival;
 
@@ -70,13 +72,20 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
         aria-label="Super Burritos game"
       />
 
-      {playing && (
+      {showHud && (
         <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-2 px-3 pt-3 pr-24 sm:px-6 sm:pt-4">
           <HudChip label="Score" value={String(hud.score).padStart(6, "0")} />
           <HudChip label={hud.world} value={`${hud.coins} coins`} />
           <HudChip label="Time" value={String(hud.time)} />
           <HudChip label="Lives" value={`x${hud.lives}`} />
         </header>
+      )}
+
+      {onMap && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 px-4 text-center">
+          <p className="font-display text-2xl text-fg drop-shadow">{hud.message || "World map"}</p>
+          <p className="text-sm text-fg">Move between courses, then jump to play</p>
+        </div>
       )}
 
       {playing && hud.powered && (
@@ -108,7 +117,7 @@ export function GameApp({ rivalScore = null }: { rivalScore?: number | null }) {
                 <p className="wordmark-super text-sm">Super</p>
                 <h1 className="wordmark-burrito mt-1 text-5xl sm:text-6xl">Burritos</h1>
                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted">
-                  Stomp nacho chips, kick taco troopers, and dive through burrito tubes. Hot sauce turns you into a salsa gunslinger — shoot with J, K, or Shift.
+                  Stomp nacho chips, kick taco troopers, and dive through burrito tubes. Clear a course, then walk the map into the next world.
                 </p>
                 {rival != null && (
                   <div className="mt-4 rounded-md border border-border bg-surface-2 px-3 py-3">
@@ -289,6 +298,8 @@ function HowTo({ onBack }: { onBack: () => void }) {
       <ul className="mt-4 space-y-2 text-sm leading-relaxed text-muted">
         <li>A / D or arrows move. W, Space, or Up jumps. Tap jump again in the air for a double jump. Hold jump to go higher.</li>
         <li>Stomp nacho chips. Stomp tacos into shells, then bump or stomp the shell to send it sliding.</li>
+        <li>World 1 ends at the Nacho Bowl. It spits chips — jump on those chips until the bowl spills.</li>
+        <li>The map works like a trail of courses. Walk to the next one. World 2 is underwater: jump to swim, stomp fish tacos and sombrero octopuses, and dodge ink.</li>
         <li>
           Bump mystery crates from below. Hot sauce turns you into a salsa gunslinger. Shoot with{" "}
           <span className="font-semibold text-ink">J</span>, <span className="font-semibold text-ink">K</span>, or{" "}
